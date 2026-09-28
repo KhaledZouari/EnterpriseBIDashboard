@@ -1,8 +1,11 @@
 # EnterpriseBIDashboard
 
-Application ASP.NET Core MVC connectee directement au cube SSAS Multidimensional `EnterpriseCube` sur `localhost`.
+Application ASP.NET Core MVC qui transforme les données du cube SSAS
+Multidimensional `EnterpriseCube` en indicateurs et analyses décisionnelles.
 
-Le projet presente un dashboard BI universitaire sous une forme professionnelle : KPI, filtres globaux, vues analytiques specialisees, graphiques Chart.js et endpoints JSON pour toutes les analyses.
+Le projet presente un dashboard BI universitaire sous une forme professionnelle
+: KPI, filtres globaux, vues analytiques specialisees, graphiques Chart.js et
+endpoints JSON pour toutes les analyses.
 
 ## Stack
 
@@ -28,9 +31,19 @@ Le projet presente un dashboard BI universitaire sous une forme professionnelle 
 }
 ```
 
-Si la base SSAS ne porte pas le meme nom que le cube, modifier `Catalog` dans `appsettings.json` et conserver `CubeName` pour le nom utilise dans `FROM [EnterpriseCube]`.
+Si la base SSAS ne porte pas le meme nom que le cube, modifier `Catalog` dans
+`appsettings.json` et conserver `CubeName` pour le nom utilise dans
+`FROM [EnterpriseCube]`.
 
 ## Architecture
+
+```mermaid
+flowchart LR
+    Browser[Navigateur] --> MVC[ASP.NET Core MVC]
+    MVC --> Service[Service SSAS]
+    Service -->|MDX via ADOMD.NET| Cube[(EnterpriseCube)]
+    MVC --> Charts[Chart.js]
+```
 
 ```text
 Controllers/
@@ -60,7 +73,8 @@ wwwroot/
   js/dashboard.js
 ```
 
-La logique MDX est centralisee dans `Services/SsasService.cs`. Les vues ne contiennent pas de requetes MDX.
+La logique MDX est centralisee dans `Services/SsasService.cs`. Les vues ne
+contiennent pas de requetes MDX.
 
 ## Pages MVC
 
@@ -74,7 +88,8 @@ La logique MDX est centralisee dans `Services/SsasService.cs`. Les vues ne conti
 
 ## Filtres globaux
 
-La barre de filtres applique les dimensions suivantes aux endpoints compatibles :
+La barre de filtres applique les dimensions suivantes aux endpoints compatibles
+:
 
 - Annee
 - Mois
@@ -83,7 +98,9 @@ La barre de filtres applique les dimensions suivantes aux endpoints compatibles 
 - Fournisseur
 - Pays client
 
-Les valeurs de filtres sont chargees depuis le cube via `MEMBER_UNIQUE_NAME`. Cela evite les erreurs lorsque le libelle affiche n'est pas la cle MDX du membre.
+Les valeurs de filtres sont chargees depuis le cube via `MEMBER_UNIQUE_NAME`.
+Cela evite les erreurs lorsque le libelle affiche n'est pas la cle MDX du
+membre.
 
 ## Endpoints JSON
 
@@ -126,7 +143,8 @@ Chaque endpoint renvoie :
 }
 ```
 
-En cas d'erreur SSAS ou MDX, l'API renvoie `503` avec un message propre. L'interface affiche ce message sans page blanche.
+En cas d'erreur SSAS ou MDX, l'API renvoie `503` avec un message propre.
+L'interface affiche ce message sans page blanche.
 
 ## KPI
 
@@ -139,7 +157,8 @@ Les KPI de base sont :
 - taxes ventes : `[Measures].[Tax Amount]`
 - remises ventes : `[Measures].[Discount Amount]`
 
-La page Overview affiche separement 4 membres calcules directement depuis le cube OLAP, sans les recalculer avec des `WITH MEMBER` dans le dashboard :
+La page Overview affiche separement 4 membres calcules directement depuis le
+cube OLAP, sans les recalculer avec des `WITH MEMBER` dans le dashboard :
 
 - marge brute : `[Measures].[Marge Brute]`
 - quantite non livree : `[Measures].[Quantite Non Livree]`
@@ -152,7 +171,8 @@ Ces valeurs sont servies par :
 GET /api/dashboard/calculated-kpis
 ```
 
-Si une mesure calculee est absente ou indisponible dans SSAS, l'endpoint reste stable et l'interface affiche `N/A` pour la carte concernee.
+Si une mesure calculee est absente ou indisponible dans SSAS, l'endpoint reste
+stable et l'interface affiche `N/A` pour la carte concernee.
 
 ## Dimensions MDX reellement detectees
 
@@ -174,59 +194,50 @@ Le cube deploye expose notamment :
 [Dim Employee].[First Name]
 ```
 
-Important : dans le cube deploye, la dimension client s'appelle `[DimCustomer]`, pas `[Dim Customer]`. La hierarchie `[Dim Supplier].[Supplier Name]` n'est pas exposee ; les analyses fournisseurs utilisent donc `[Dim Supplier].[Supplier Code]`.
+Important : dans le cube deploye, la dimension client s'appelle `[DimCustomer]`,
+pas `[Dim Customer]`. La hierarchie `[Dim Supplier].[Supplier Name]` n'est pas
+exposee ; les analyses fournisseurs utilisent donc
+`[Dim Supplier].[Supplier Code]`.
 
 ## Exemples MDX
 
 ### Ventes vs achats par annee
 
 ```mdx
-SELECT
-    {
-        [Measures].[Line Total - Fact Sales],
-        [Measures].[Line Total]
-    } ON COLUMNS,
-    NON EMPTY
-        ORDER(
-            [Dim Date].[Year Number].[Year Number].MEMBERS,
-            [Dim Date].[Year Number].CURRENTMEMBER.MEMBER_CAPTION,
-            BASC
-        ) ON ROWS
-FROM [EnterpriseCube]
+SELECT { [Measures].[Line Total - Fact Sales], [Measures].[Line Total] } ON
+COLUMNS, NON EMPTY ORDER( [Dim Date].[Year Number].[Year Number].MEMBERS, [Dim
+Date].[Year Number].CURRENTMEMBER.MEMBER_CAPTION, BASC ) ON ROWS FROM
+[EnterpriseCube]
 ```
 
 ### Top produits
 
 ```mdx
-SELECT
-    { [Measures].[Line Total - Fact Sales] } ON COLUMNS,
-    NON EMPTY
-        TOPCOUNT(
-            [Dim Product].[Product Code].[Product Code].MEMBERS,
-            10,
-            [Measures].[Line Total - Fact Sales]
-        ) ON ROWS
-FROM [EnterpriseCube]
+SELECT { [Measures].[Line Total - Fact Sales] } ON COLUMNS, NON EMPTY TOPCOUNT(
+[Dim Product].[Product Code].[Product Code].MEMBERS, 10, [Measures].[Line Total
+- Fact Sales] ) ON ROWS FROM [EnterpriseCube]
 ```
 
 ### Filtres
 
-Les filtres sont generes avec `StrToMember(..., CONSTRAINED)` a partir des `MEMBER_UNIQUE_NAME` fournis par SSAS :
+Les filtres sont generes avec `StrToMember(..., CONSTRAINED)` a partir des
+`MEMBER_UNIQUE_NAME` fournis par SSAS :
 
 ```mdx
-WHERE (
-    StrToMember('[Dim Date].[Year Number].&[2025]', CONSTRAINED)
-)
+WHERE ( StrToMember('[Dim Date].[Year Number].&[2025]', CONSTRAINED) )
 ```
 
-Quand un filtre concerne la meme hierarchie que l'axe affiche, le service applique le membre directement sur l'axe `ROWS` pour eviter l'erreur SSAS "hierarchie deja presente dans l'axe".
+Quand un filtre concerne la meme hierarchie que l'axe affiche, le service
+applique le membre directement sur l'axe `ROWS` pour eviter l'erreur SSAS
+"hierarchie deja presente dans l'axe".
 
 ## Lancement
 
 ```powershell
-cd C:\Users\zouar\OneDrive\Bureau\ProjetBI\EnterpriseBIDashboard
+git clone https://github.com/KhaledZouari/EnterpriseBIDashboard.git
+cd EnterpriseBIDashboard
 dotnet restore
-dotnet run
+dotnet run --urls http://localhost:5244
 ```
 
 Ouvrir :
@@ -235,7 +246,8 @@ Ouvrir :
 http://localhost:5244
 ```
 
-Dans Visual Studio, ouvrir `EnterpriseBIDashboard.csproj`, choisir le profil `http` ou `https`, puis lancer avec `F5`.
+Dans Visual Studio, ouvrir `EnterpriseBIDashboard.csproj`, choisir le profil
+`http` ou `https`, puis lancer avec `F5`.
 
 ## Verification
 
@@ -255,6 +267,53 @@ Checklist :
 4. `/api/dashboard/connection-status` renvoie `isConnected: true`.
 5. La page `/` affiche les KPI, graphiques et tableaux.
 
+## Variables d'environnement
+
+La configuration .NET accepte les variables suivantes. Voir `.env.example` pour
+un modèle sans secret.
+
+| Variable                      | Description                                |
+| ----------------------------- | ------------------------------------------ |
+| `SqlServer__Server`           | Instance SQL Server contenant l'entrepôt.  |
+| `SqlServer__DataWarehouse`    | Nom de l'entrepôt de données.              |
+| `Ssas__ServerName`            | Instance SQL Server Analysis Services.     |
+| `Ssas__CubeName`              | Nom du cube utilisé dans les requêtes MDX. |
+| `Ssas__ConnectionString`      | Chaîne de connexion ADOMD.NET.             |
+| `Ssas__CommandTimeoutSeconds` | Délai maximal d'une requête MDX.           |
+
+## Tests et qualité
+
+```powershell
+dotnet restore
+dotnet build --no-restore --configuration Release
+```
+
+La CI reproduit ce build sur chaque pull request. Les requêtes d'intégration
+nécessitent une instance SSAS Windows avec le cube déployé et ne sont donc pas
+exécutées par la CI hébergée.
+
+## Captures d'écran
+
+Les futures captures sont regroupées dans `docs/screenshots/`.
+
+## Choix techniques
+
+- ADOMD.NET fournit l'accès natif au cube multidimensionnel depuis .NET.
+- Les requêtes MDX sont centralisées dans un service plutôt que dans les vues.
+- Les endpoints JSON séparent la récupération analytique du rendu Chart.js.
+
+## Pistes d'amélioration
+
+- Isoler la construction des requêtes MDX pour permettre des tests unitaires.
+- Ajouter des tests d'intégration exécutés sur un runner Windows relié à SSAS.
+- Externaliser entièrement les paramètres locaux hors des fichiers suivis.
+
+## Licence
+
+Ce projet est distribué sous licence MIT. Voir [LICENSE](LICENSE).
+
 ## Notes
 
-Aucune donnee fallback n'est utilisee comme donnee BI. En cas d'erreur, l'application affiche un etat d'erreur ou un etat vide, sans inventer de valeurs.
+Aucune donnee fallback n'est utilisee comme donnee BI. En cas d'erreur,
+l'application affiche un etat d'erreur ou un etat vide, sans inventer de
+valeurs.
