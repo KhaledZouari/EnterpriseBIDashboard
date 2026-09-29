@@ -1,5 +1,7 @@
 # Enterprise BI Dashboard
 
+[![CI](https://github.com/KhaledZouari/enterprise-bi-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/KhaledZouari/enterprise-bi-dashboard/actions/workflows/ci.yml)
+
 Application ASP.NET Core MVC qui transforme les données du cube SSAS
 Multidimensional `EnterpriseCube` en indicateurs et analyses décisionnelles.
 
@@ -302,9 +304,10 @@ Les futures captures sont regroupées dans `docs/screenshots/`.
 - Les requêtes MDX sont centralisées dans un service plutôt que dans les vues.
 - Les endpoints JSON séparent la récupération analytique du rendu Chart.js.
 
-## Pistes d'amélioration
+## Limites connues et pistes d'amélioration
 
-- Isoler la construction des requêtes MDX pour permettre des tests unitaires.
+- La construction des requêtes MDX est encore couplée au service SSAS, ce qui
+  limite les tests unitaires hors connexion au cube.
 - Ajouter des tests d'intégration exécutés sur un runner Windows relié à SSAS.
 - Externaliser entièrement les paramètres locaux hors des fichiers suivis.
 
