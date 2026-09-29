@@ -1,4 +1,4 @@
-# EnterpriseBIDashboard
+# Enterprise BI Dashboard
 
 Application ASP.NET Core MVC qui transforme les données du cube SSAS
 Multidimensional `EnterpriseCube` en indicateurs et analyses décisionnelles.
@@ -234,8 +234,8 @@ applique le membre directement sur l'axe `ROWS` pour eviter l'erreur SSAS
 ## Lancement
 
 ```powershell
-git clone https://github.com/KhaledZouari/EnterpriseBIDashboard.git
-cd EnterpriseBIDashboard
+git clone https://github.com/KhaledZouari/enterprise-bi-dashboard.git
+cd enterprise-bi-dashboard
 dotnet restore
 dotnet run --urls http://localhost:5244
 ```
