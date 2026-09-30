@@ -1,5 +1,8 @@
 # Enterprise BI Dashboard
 
+[![CI](https://github.com/KhaledZouari/enterprise-bi-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/KhaledZouari/enterprise-bi-dashboard/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-2ea44f.svg)](LICENSE)
+
 An ASP.NET Core decision-support application connected to a multidimensional
 SQL Server Analysis Services cube.
 
